@@ -99,23 +99,36 @@ Each Telegram account is allowed one app. That's fine — you can reuse it for a
 
 ## Step 3 — Install the tool
 
+Recommended (gives you a `tgcleaner` command):
+
 ```bash
 git clone https://github.com/threatner/Telegram-Cleaner.git
 cd Telegram-Cleaner
 python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
+.venv/bin/pip install -e .
 ```
 
-That installs the dependencies in a project-local virtual environment so they don't clutter your system Python.
+That installs the package and its deps in a project-local virtual environment, and creates a `tgcleaner` console command inside `.venv/bin/`.
 
-On Windows, use `.venv\Scripts\python` and `.venv\Scripts\pip` instead.
+On Windows: `python -m venv .venv && .venv\Scripts\pip install -e .`
+
+Alternatively, if you don't want to install the package (just run from source):
+
+```bash
+.venv/bin/pip install -r requirements.txt
+.venv/bin/python -m tgcleaner    # or python cleaner.py for the legacy entry point
+```
 
 ## Step 4 — Log in
 
 Run the tool:
 
 ```bash
-.venv/bin/python cleaner.py
+.venv/bin/tgcleaner            # if you ran pip install -e .
+# or
+.venv/bin/python -m tgcleaner  # if you only ran pip install -r requirements.txt
+# or
+.venv/bin/python cleaner.py    # legacy single-file entry, still works
 ```
 
 ### First run: enter your API credentials
@@ -316,18 +329,40 @@ Files created in the project folder:
 - Doesn't archive or mute in bulk — only removes. Open an issue if that's useful
 - Doesn't keep a log of what was deleted; redirect output to a file if you need one: `python cleaner.py | tee cleanup.log`
 
+## Project layout
+
+```
+Telegram-Cleaner/
+├── cleaner.py          # legacy entry point (3 lines, calls into the package)
+├── pyproject.toml      # makes it pip-installable as `tgcleaner`
+├── requirements.txt    # for non-package install
+├── README.md / LICENSE
+└── tgcleaner/
+    ├── __init__.py
+    ├── __main__.py     # python -m tgcleaner
+    ├── cli.py          # main flow + loop
+    ├── config.py       # paths, env, credentials
+    ├── console.py      # shared Rich console + style/filter constants
+    ├── auth.py         # login_qr / login_phone / login
+    ├── qr.py           # QR rendering + OS auto-open
+    ├── dialogs.py      # entity helpers + fetch
+    ├── panels.py       # Rich panels (stats / summary / labels)
+    ├── removal.py      # remove_dialog / retry / execute_removals
+    └── tui.py          # CleanerApp (Textual)
+```
+
 ## Contributing
 
-PRs welcome. Keep it a single-file script — that's part of the appeal.
+PRs welcome.
 
 ```bash
-.venv/bin/python -m py_compile cleaner.py   # quick syntax check
+.venv/bin/python -c "import ast, pathlib; [ast.parse(p.read_text()) for p in pathlib.Path('tgcleaner').glob('*.py')]; print('syntax OK')"
 ```
 
 Areas where help is wanted:
 - Mass-mute / mass-archive features (instead of just deleting)
-- Better tests (currently only smoke checks)
-- Distributing as `pip install`-able package with a `tgcleaner` console script
+- Real test suite (currently only smoke checks)
+- Publishing to PyPI
 
 ## License
 
